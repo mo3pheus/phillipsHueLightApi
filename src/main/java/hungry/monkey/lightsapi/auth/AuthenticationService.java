@@ -1,28 +1,25 @@
-package auth;
+package hungry.monkey.lightsapi.auth;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tomcat.util.codec.binary.Base64;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @Service
 public class AuthenticationService {
-    public static Integer MAX_NUM_REQUESTS = 50;
+    @Value("${client.request.cap}")
+    private Integer maxNumRequests;
 
+    @Getter
     private Map<String, ClientData> clientDataMap = new HashMap<>();
 
     public ClientData getClientData(String clientId) {
         return clientDataMap.get(clientId);
-    }
-
-    @PostConstruct
-    private void markBeginning() {
-        log.info("Authentication Service created and started." + clientDataMap.size());
     }
 
     public ClientDataResponse addNewClient() {
@@ -31,40 +28,40 @@ public class AuthenticationService {
         String clientSecret = Base64.encodeBase64String(clientSecretOriginal.getBytes());
         clientSecret = Base64.encodeBase64String(clientSecret.getBytes());
 
-        ClientData clientData = new ClientData();
-        clientData.setSecret(clientSecretOriginal);
-        clientData.setNumRequests(0);
+        ClientData clientDataRecord = new ClientData();
+        clientDataRecord.setSecret(clientSecretOriginal);
+        clientDataRecord.setNumRequests(0);
 
-        clientDataMap.put(clientId, clientData);
+        clientDataMap.put(clientId, clientDataRecord);
 
         ClientDataResponse clientDataResponse = new ClientDataResponse();
         clientDataResponse.setClientId(clientId);
+        ClientData clientData = new ClientData();
+        clientData.setNumRequests(0);
         clientData.setSecret(clientSecret);
         clientDataResponse.setClientData(clientData);
 
-        log.info("Added new client " + clientDataResponse);
+        log.debug("Added new client " + clientId);
 
         return clientDataResponse;
     }
 
     public Boolean isClientRequestValid(String clientId, String clientSecret) {
         if (!clientDataMap.containsKey(clientId)) {
+            log.warn("ClientDataMap does not contain key" + clientId + " request is invalid");
             return false;
         } else {
             ClientData clientData = clientDataMap.get(clientId);
-
-            if (clientData.getSecret().equals(Base64.decodeBase64(clientSecret))
-                    && clientData.getNumRequests() <= MAX_NUM_REQUESTS) {
+            String decodedClientSecret = new String(Base64.decodeBase64(clientSecret.getBytes()));
+            if (clientData.getSecret().equals(decodedClientSecret)
+                    && clientData.getNumRequests() < maxNumRequests) {
+                log.info("ClientId = " + clientId + " valid request");
                 return true;
             } else return false;
         }
     }
 
-    public void processClientRequest(String clientId, String clientSecret) {
-        if (!isClientRequestValid(clientId, clientSecret)) {
-            return;
-        }
-
+    public void addValidClientRequest(String clientId) {
         ClientData clientData = clientDataMap.get(clientId);
         clientData.incrementNumRequests();
 
@@ -72,5 +69,21 @@ public class AuthenticationService {
         clientDataMap.put(clientId, clientData);
 
         log.info("Incremented request for clientId = " + clientId);
+    }
+
+    @Scheduled(fixedRate = 1000)
+    public void cleanUpMaxedOutClients() {
+        List<String> defaultingClients = new ArrayList<>();
+        for (String clientId : clientDataMap.keySet()) {
+            ClientData clientData = clientDataMap.get(clientId);
+            if (clientData.getNumRequests() == maxNumRequests) {
+                defaultingClients.add(clientId);
+            }
+        }
+
+        for (String clientId : defaultingClients) {
+            log.info("Removing client due to max requests reached. ClientId = " + clientId);
+            clientDataMap.remove(clientId);
+        }
     }
 }

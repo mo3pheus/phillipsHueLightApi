@@ -1,4 +1,4 @@
-package auth;
+package hungry.monkey.lightsapi.auth;
 
 import lombok.Getter;
 import lombok.Setter;

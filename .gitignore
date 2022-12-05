@@ -31,3 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+deployment/
+
+src/main/resources/hueMetaData.txt
