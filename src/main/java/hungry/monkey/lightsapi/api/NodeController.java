@@ -27,7 +27,7 @@ public class NodeController {
     public Serializable sendStateRequest(
             @RequestParam(value = "clientId", defaultValue = "null") String clientId,
             @RequestParam(value = "clientSecret", defaultValue = "null") String clientSecret,
-            @RequestParam(value = "xy", defaultValue = "[0.5425,0.4196]") String xy,
+            @RequestParam(value = "xy", defaultValue = "0.5425,0.4196") String xy,
             @RequestParam(value = "brightness", defaultValue = "42") Integer brightness,
             @RequestParam(value = "hue", defaultValue = "12750") Integer hue,
             @RequestParam(value = "saturation", defaultValue = "200") Integer saturation,
@@ -40,7 +40,12 @@ public class NodeController {
             clientDataResponse.setClientData(authenticationService.getClientData(clientId));
             clientDataResponse.setNotes("request successful");
 
-            String payloadString = (new HuePhoton(xy, hue, saturation, brightness, on)).toString();
+            String payloadString = (new HuePhoton(
+                    HuePhoton.convertToXyFloat(xy),
+                    hue,
+                    saturation,
+                    brightness,
+                    on)).toString();
             messageRelay.sendMessage(payloadString.getBytes());
 
             return clientDataResponse;

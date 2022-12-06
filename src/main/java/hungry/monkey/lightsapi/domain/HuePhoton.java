@@ -16,11 +16,11 @@ public class HuePhoton implements Serializable {
 
     @Getter
     @Setter
-    private String xy;
+    private Float[] xy;
 
     @Getter
     @Setter
-    private Integer brightness;
+    private Integer bri;
 
     @Getter
     @Setter
@@ -28,14 +28,18 @@ public class HuePhoton implements Serializable {
 
     @Getter
     @Setter
-    private Integer saturation;
+    private Integer sat;
 
-    public HuePhoton(String xy, Integer hue, Integer saturation, Integer brightness, Boolean on) {
+    public HuePhoton(Float[] xy, Integer hue, Integer sat, Integer brightness, Boolean on) {
         this.xy = xy;
         this.hue = hue;
-        this.saturation = saturation;
-        this.brightness = brightness;
+        this.sat = sat;
+        this.bri = brightness;
         this.on = on;
+    }
+
+    public HuePhoton() {
+
     }
 
     @Override
@@ -48,5 +52,14 @@ public class HuePhoton implements Serializable {
             log.error("Could not get string format for object.", jsonProcessingException);
         }
         return objectString;
+    }
+
+    public static Float[] convertToXyFloat(String xy){
+        String[] xyArr = xy.split(",");
+        Float[] xyFloat = new Float[2];
+        xyFloat[0]=Float.parseFloat(xyArr[0]);
+        xyFloat[1]=Float.parseFloat(xyArr[1]);
+
+        return xyFloat;
     }
 }

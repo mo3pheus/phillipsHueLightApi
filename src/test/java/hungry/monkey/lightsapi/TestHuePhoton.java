@@ -10,13 +10,16 @@ public class TestHuePhoton {
 
     @Before
     public void setUp() {
-        huePhoton = new HuePhoton("[0.5425,0.4196]", 12750, 200, 42, true);
+        Float[] xy = new Float[2];
+        xy[0] = 0.5425f;
+        xy[1] = 0.4196f;
+        huePhoton = new HuePhoton(xy, 12750, 200, 42, true);
     }
 
     @Test
     public void testStringRep() {
         String hueString = huePhoton.toString();
-        String expectedString = "{\"on\":true,\"xy\":\"[0.5425,0.4196]\",\"brightness\":42,\"hue\":12750,\"saturation\":200}";
+        String expectedString = "{\"on\":true,\"xy\":[0.5425,0.4196],\"bri\":42,\"hue\":12750,\"sat\":200}";
         Assert.assertEquals(expectedString, hueString);
         System.out.println(hueString);
     }
